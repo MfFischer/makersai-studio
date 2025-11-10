@@ -1,0 +1,32 @@
+{
+  "name": "makersai-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AI-powered 3D model and laser cutting generator for makers",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev:all": "concurrently \"npm run dev\" \"cd server && npm run dev\"",
+    "install:all": "npm install && cd server && npm install"
+  },
+  "keywords": ["3d-printing", "laser-cutting", "ai", "openscad", "makers"],
+  "author": "Maria Fe Fischer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MfFischer/makersai-studio.git"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "concurrently": "^9.1.2"
+  }
+}

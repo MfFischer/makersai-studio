@@ -1,0 +1,42 @@
+{
+  "name": "printforge-ai-server",
+  "version": "1.0.0",
+  "description": "Backend API server for PrintForge AI",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "keywords": ["3d-printing", "ai", "openscad", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.24.1",
+    "compression": "^1.7.5",
+    "better-sqlite3": "^11.8.1",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.2",
+    "eslint": "^9.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0"
+  }
+}
+
