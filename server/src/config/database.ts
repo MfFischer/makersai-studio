@@ -5,7 +5,7 @@ import fs from 'fs';
 
 let db: Database.Database | null = null;
 
-export const initDatabase = () => {
+export const initDatabase = (): Database.Database => {
   try {
     // Ensure data directory exists
     const dbDir = path.dirname(config.database.path);

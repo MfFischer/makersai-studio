@@ -122,6 +122,70 @@ makersai-studio/
 
 ```
 
+## 🧪 Testing
+
+### Run Unit and Integration Tests
+
+```bash
+cd server
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+**Test Coverage:**
+- ✅ 27 tests passing
+- ✅ 16 unit tests for printer profiles
+- ✅ 11 integration tests for API endpoints
+
+## 📦 Building for Production
+
+### Build Web Application
+
+```bash
+# Build frontend
+npm run build
+
+# Build backend
+cd server
+npm run build
+cd ..
+
+# Start production server
+cd server
+npm start
+```
+
+### Build Windows Executable
+
+Create a standalone Windows application with Electron:
+
+```bash
+# Build both frontend and backend
+npm run build
+cd server && npm run build && cd ..
+
+# Package as Windows executable
+npm run package:win
+```
+
+This will create in the `release/` directory:
+- **Installer**: `MakersAI Studio Setup X.X.X.exe` (NSIS installer)
+- **Portable**: `MakersAI Studio X.X.X.exe` (Portable executable)
+
+**Windows Executable Features:**
+- ✅ Embedded Node.js backend
+- ✅ React frontend
+- ✅ SQLite database
+- ✅ No external dependencies required
+- ✅ Auto-starts backend on launch
+- ✅ Native window controls
+- ✅ Works offline (after initial setup)
+
 ## API Endpoints
 
 ### Generate Model

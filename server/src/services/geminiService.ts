@@ -119,6 +119,9 @@ If there are more parts than colors, reuse colors intelligently.`;
       },
     });
 
+    if (!response.text) {
+      throw new Error('No response text from API');
+    }
     const jsonText = response.text.trim();
     const parsed = JSON.parse(jsonText);
 
@@ -199,6 +202,9 @@ Provide a detailed image prompt for visualization.`;
       },
     });
 
+    if (!response.text) {
+      throw new Error('No response text from API');
+    }
     const jsonText = response.text.trim();
     const parsed = JSON.parse(jsonText);
 
@@ -252,8 +258,11 @@ async function generateImageFromPrompt(imagePrompt: string): Promise<string> {
     });
 
     if (response.generatedImages && response.generatedImages.length > 0) {
-      const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-      const imageUrl = `data:image/png;base64,${base64ImageBytes}`;
+      const imageData = response.generatedImages[0]?.image?.imageBytes;
+      if (!imageData) {
+        throw new Error('No image data in response');
+      }
+      const imageUrl = `data:image/png;base64,${imageData}`;
 
       // Cache the result
       setToCache(cacheKey, imageUrl);
