@@ -5,10 +5,12 @@ AI-powered 3D model and laser cutting generator. Transform text prompts into pri
 ## Features
 
 - **Text-to-3D**: Convert natural language descriptions into OpenSCAD code
+- **Image-to-3D**: Upload photos or drawings and convert them to 3D models using AI vision
 - **Live 3D Preview**: Real-time visualization using JSCAD viewer
 - **Multi-format Export**: Download as .scad, .stl, .png, and .svg files
 - **Construction Kit Mode**: Break complex objects into individual parts with color coding
 - **Laser Cutting Support**: Generate 2D SVG profiles for laser cutting
+- **Printer Validation**: Validate designs for your specific 3D printer (Anycubic Kobra 3 Combo support)
 - **Smart Caching**: Reduce API costs with intelligent caching
 - **Rate Limiting**: Built-in protection against API abuse
 - **Local Database**: SQLite storage for design history
@@ -208,6 +210,41 @@ Content-Type: application/json
 {
   "prompt": "a simple chair",
   "availableColors": ["red", "blue", "green"]
+}
+```
+
+### Image-to-3D Conversion
+```http
+POST /api/generate/image-to-model
+Content-Type: multipart/form-data
+
+Form Data:
+- image: (file) Image file (JPG, PNG, GIF, WebP, max 10MB)
+- additionalPrompt: (optional) Additional instructions for the conversion
+- dimensions: (optional) JSON string {"width": 250, "height": 250}
+- colors: (optional) JSON array ["red", "blue"]
+```
+
+### Printer Profile Endpoints
+```http
+GET /api/printers/profiles
+GET /api/printers/profiles/:profileId
+
+POST /api/printers/validate/dimensions
+Content-Type: application/json
+{
+  "profileId": "anycubic-kobra-3-combo",
+  "width": 200,
+  "depth": 200,
+  "height": 250
+}
+
+POST /api/printers/validate/laser
+Content-Type: application/json
+{
+  "profileId": "anycubic-kobra-3-combo",
+  "width": 350,
+  "height": 350
 }
 ```
 

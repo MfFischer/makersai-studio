@@ -39,13 +39,29 @@ Open your browser to: **http://localhost:3000**
 
 ## 🎨 Using the Application
 
-### Generate a 3D Model
+### Generate a 3D Model from Text
 
 1. Enter a prompt like: "a 20mm cube with rounded corners"
 2. Click "Generate"
 3. Wait for the AI to generate OpenSCAD code and a preview image
 4. View the 3D model in the preview window
 5. Download as .scad, .stl, .png, or .svg
+
+### Generate a 3D Model from Image
+
+1. Click the image upload area or drag and drop an image
+2. Select a photo or drawing (JPG, PNG, GIF, WebP, max 10MB)
+3. (Optional) Add additional instructions in the text field
+   - Example: "make it 50mm tall", "add a base for stability"
+4. Click "Generate"
+5. The AI will analyze the image and create a 3D model
+6. Download as .scad, .stl, .png, or .svg
+
+**Perfect for:**
+- Converting 2D drawings to 3D models
+- Recreating physical objects from photos
+- Reverse engineering parts
+- Transforming sketches into printable designs
 
 ### Validate for Your Printer
 
