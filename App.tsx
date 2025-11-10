@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { generateScadImageAndSvg, GeneratedData, generateConstructionPlan, ConstructionPartPlan } from './services/apiClient';
+import { generateScadImageAndSvg, GeneratedData, generateConstructionPlan, ConstructionPartPlan, generateModelFromImage } from './services/apiClient';
 import ScadPreview, { ScadPreviewHandles } from './ScadPreview';
 import ImageModal from './ImageModal';
 
@@ -64,8 +64,12 @@ const App: React.FC = () => {
   const [activeScadCode, setActiveScadCode] = useState<string | null>(null);
   const [colors, setColors] = useState<string[]>([]);
   const [colorInput, setColorInput] = useState<string>('');
-  
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [useImageMode, setUseImageMode] = useState<boolean>(false);
+
   const scadPreviewRef = useRef<ScadPreviewHandles>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const examples = [
     "a 20mm cube with rounded corners", "a gear with 12 teeth", "a simple phone stand", "a hollow cylinder, 20mm tall", "a chess pawn", "a keychain with the name 'Alex'",
@@ -84,9 +88,37 @@ const App: React.FC = () => {
     setColors(colors.filter(c => c !== colorToRemove));
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image file size must be less than 10MB');
+        return;
+      }
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return;
+    if ((!prompt.trim() && !selectedImage) || isLoading) return;
 
     setIsLoading(true);
     setError(null);
@@ -96,11 +128,19 @@ const App: React.FC = () => {
 
     try {
       const dimensions = laserWidth && laserHeight ? { width: parseFloat(laserWidth), height: parseFloat(laserHeight) } : undefined;
-      
-      if (isConstructionMode) {
+
+      // Image-to-3D mode
+      if (selectedImage) {
+        setLoadingMessage('Analyzing image and generating 3D model...');
+        const result = await generateModelFromImage(selectedImage, prompt || undefined, dimensions, colors);
+        setGeneratedData(result);
+        setActiveScadCode(result.scadCode);
+      }
+      // Construction mode
+      else if (isConstructionMode) {
         setLoadingMessage('Step 1: Planning construction parts...');
         const plan = await generateConstructionPlan(prompt, colors);
-        
+
         for (let i = 0; i < plan.length; i++) {
             const part = plan[i];
             setLoadingMessage(`Step 2: Generating part ${i + 1}/${plan.length}: ${part.partName}...`);
@@ -111,7 +151,9 @@ const App: React.FC = () => {
               setActiveScadCode(result.scadCode);
             }
         }
-      } else {
+      }
+      // Normal text-to-3D mode
+      else {
         setLoadingMessage('Generating your model...');
         const result = await generateScadImageAndSvg(prompt, dimensions, colors);
         setGeneratedData(result);
@@ -124,7 +166,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setLoadingMessage('');
     }
-  }, [prompt, isLoading, laserWidth, laserHeight, isConstructionMode, colors]);
+  }, [prompt, isLoading, laserWidth, laserHeight, isConstructionMode, colors, selectedImage]);
 
   const handleDownload = (content: string | Blob, filename: string, mimeType: string) => {
     const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
@@ -151,21 +193,94 @@ const App: React.FC = () => {
         </header>
 
         <main>
+          {/* Image Upload Section */}
+          <div className="bg-gray-800 rounded-xl shadow-2xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-teal-300">📸 Image-to-3D Conversion (Optional)</h2>
+              {selectedImage && (
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Clear Image
+                </button>
+              )}
+            </div>
+
+            {!selectedImage ? (
+              <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-teal-500 transition-colors">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <ImageIcon className="h-16 w-16 mx-auto text-gray-500 mb-4" />
+                  <p className="text-lg font-medium text-gray-300 mb-2">
+                    Upload an image to convert to 3D
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Click to select or drag and drop (Max 10MB)
+                  </p>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Supported: JPG, PNG, GIF, WebP
+                  </p>
+                </label>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 p-4 bg-gray-900 rounded-lg border-2 border-teal-500">
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Selected"
+                    className="w-32 h-32 object-contain rounded-lg border-2 border-gray-700"
+                  />
+                )}
+                <div className="flex-grow">
+                  <p className="text-lg font-medium text-teal-300">
+                    {selectedImage.name}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ✅ Image ready for conversion. Add optional prompt below for specific instructions.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="bg-gray-800 rounded-xl shadow-2xl p-6 mb-8">
             <div className="flex justify-between items-center mb-3">
-                 <h2 className="text-xl font-semibold text-teal-300">1. Enter your prompt</h2>
-                 <button 
-                    onClick={() => setIsConstructionMode(!isConstructionMode)}
-                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg border-2 transition-colors duration-200 ${isConstructionMode ? 'bg-teal-500 border-teal-400 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'}`}
-                 >
-                    <ConstructionIcon className="h-5 w-5 mr-2" />
-                    Construction Kit Mode
-                 </button>
+                 <h2 className="text-xl font-semibold text-teal-300">
+                   {selectedImage ? '💬 Additional Instructions (Optional)' : '1. Enter your prompt'}
+                 </h2>
+                 {!selectedImage && (
+                   <button
+                      type="button"
+                      onClick={() => setIsConstructionMode(!isConstructionMode)}
+                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg border-2 transition-colors duration-200 ${isConstructionMode ? 'bg-teal-500 border-teal-400 text-white' : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'}`}
+                   >
+                      <ConstructionIcon className="h-5 w-5 mr-2" />
+                      Construction Kit Mode
+                   </button>
+                 )}
             </div>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder={isConstructionMode ? "e.g., a small wooden chair, a toy car" : "e.g., a 20mm cube with a 10mm hole through the center"}
+              placeholder={
+                selectedImage
+                  ? "e.g., make it 50mm tall, add a base for stability, simplify the design..."
+                  : isConstructionMode
+                    ? "e.g., a small wooden chair, a toy car"
+                    : "e.g., a 20mm cube with a 10mm hole through the center"
+              }
               className="w-full h-28 p-3 bg-gray-900 border-2 border-gray-700 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors duration-200 resize-none"
               disabled={isLoading}
               onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { handleGenerate(); }}}

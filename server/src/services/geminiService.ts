@@ -22,6 +22,14 @@ interface PrintDimensions {
   height: number;
 }
 
+export interface ImageToModelInput {
+  imageBase64: string;
+  mimeType: string;
+  additionalPrompt?: string;
+  dimensions?: PrintDimensions;
+  colors?: string[];
+}
+
 // Generate cache key from input parameters
 const generateCacheKey = (prefix: string, data: any): string => {
   const hash = crypto
@@ -291,5 +299,126 @@ export async function generateScadImageAndSvg(
     imageUrl,
     svgCode,
   };
+}
+
+// Image-to-3D conversion function
+export async function generateModelFromImage(
+  input: ImageToModelInput
+): Promise<GeneratedData> {
+  const cacheKey = generateCacheKey('image-to-model', {
+    image: input.imageBase64.substring(0, 100), // Use first 100 chars for cache key
+    prompt: input.additionalPrompt,
+    dimensions: input.dimensions,
+  });
+
+  // Check cache
+  const cached = getFromCache(cacheKey);
+  if (cached) {
+    console.log('✅ Returning cached image-to-model result');
+    return cached;
+  }
+
+  console.log('🖼️  Generating 3D model from image...');
+
+  const model = 'gemini-2.0-flash-exp';
+
+  // Build the prompt
+  let promptText = `Analyze this image and create a 3D model in OpenSCAD code.
+
+Instructions:
+1. Carefully examine the image to understand the object's shape, proportions, and features
+2. Generate OpenSCAD code that recreates this object as a 3D printable model
+3. Make reasonable assumptions about depth/thickness if not visible in the image
+4. Ensure the model is printable (no floating parts, proper support)
+5. Add appropriate details and features visible in the image`;
+
+  if (input.additionalPrompt) {
+    promptText += `\n6. Additional instructions: ${input.additionalPrompt}`;
+  }
+
+  if (input.dimensions) {
+    promptText += `\n7. Target dimensions: ${input.dimensions.width}mm × ${input.dimensions.height}mm`;
+  }
+
+  // Create the schema for structured output
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      scadCode: {
+        type: Type.STRING,
+        description: 'Complete OpenSCAD code for the 3D model',
+      },
+      imagePrompt: {
+        type: Type.STRING,
+        description: 'Detailed prompt for generating a realistic preview image',
+      },
+      svgCode: {
+        type: Type.STRING,
+        description: 'SVG code for laser cutting profile (if applicable)',
+        nullable: true,
+      },
+      analysis: {
+        type: Type.STRING,
+        description: 'Brief analysis of what was detected in the image',
+      },
+    },
+    required: ['scadCode', 'imagePrompt', 'analysis'],
+  };
+
+  try {
+    // Generate the model using vision capabilities
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: input.mimeType,
+                data: input.imageBase64,
+              },
+            },
+            { text: promptText },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+        temperature: 0.3,
+      },
+    });
+
+    if (!response.text) {
+      throw new Error('No response text from API');
+    }
+
+    const jsonText = response.text.trim();
+    const parsed = JSON.parse(jsonText);
+
+    if (!parsed.scadCode || !parsed.imagePrompt) {
+      throw new Error('Invalid response structure from API');
+    }
+
+    console.log(`📊 Image Analysis: ${parsed.analysis}`);
+
+    // Generate preview image
+    const imageUrl = await generateImageFromPrompt(parsed.imagePrompt);
+
+    const result: GeneratedData = {
+      scadCode: parsed.scadCode,
+      imageUrl: imageUrl,
+      svgCode: parsed.svgCode || null,
+    };
+
+    // Cache the result
+    setToCache(cacheKey, result);
+
+    return result;
+  } catch (error) {
+    console.error('Error generating model from image:', error);
+    throw new Error('Failed to generate 3D model from image. Please try again.');
+  }
 }
 

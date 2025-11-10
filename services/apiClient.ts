@@ -67,3 +67,38 @@ export async function generateConstructionPlan(
   return result.data;
 }
 
+export async function generateModelFromImage(
+  imageFile: File,
+  additionalPrompt?: string,
+  dimensions?: PrintDimensions,
+  colors?: string[]
+): Promise<GeneratedData> {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  if (additionalPrompt) {
+    formData.append('additionalPrompt', additionalPrompt);
+  }
+
+  if (dimensions) {
+    formData.append('dimensions', JSON.stringify(dimensions));
+  }
+
+  if (colors && colors.length > 0) {
+    formData.append('colors', JSON.stringify(colors));
+  }
+
+  const response = await fetch(`${API_URL}/api/generate/image-to-model`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate model from image');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
