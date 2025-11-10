@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "dev:all": "concurrently \"npm run dev\" \"cd server && npm run dev\"",
     "install:all": "npm install && cd server && npm install",
-    "electron:dev": "concurrently \"npm run dev\" \"cd server && npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:dev": "concurrently \"npm run dev\" \"cd server && npm run dev\" \"wait-on http://localhost:3003 && electron .\"",
     "electron:build": "npm run build && cd server && npm run build && cd .. && electron-builder",
     "package:win": "npm run build && cd server && npm run build && cd .. && electron-builder --win --x64"
   },

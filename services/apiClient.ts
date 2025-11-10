@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Use relative URL to leverage Vite proxy and avoid CORS issues
+const API_URL = '';
 
 export interface GeneratedData {
   scadCode: string;
