@@ -9,6 +9,7 @@ import { createRateLimiter } from './middleware/rateLimiter.js';
 
 // Import routes
 import generateRoutes from './routes/generate.js';
+import printerRoutes from './routes/printers.js';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/generate', generateRoutes);
+app.use('/api/printers', printerRoutes);
 
 // 404 handler
 app.use((req, res) => {
